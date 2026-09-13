@@ -227,15 +227,8 @@ def read_video(video_path):
 
     riskcycles = []
     for event in cycles:
-        if event["hz"] >= 3.0:
+        if event["hz"] >= 3.0 - 1e-6:
             riskcycles.append(event)
-    risk_segments = []
-    if len(riskcycles) > 0:
-        current_segment = {
-         "start": riskcycles[0]["start"],
-         "end": riskcycles[0]["end"],
-         "frequency": riskcycles[0]["hz"]
-        }
 
     risk_segments = []
 
@@ -255,15 +248,15 @@ def read_video(video_path):
                     cycle["hz"]
                 )
             else:
-
                 risk_segments.append(current_segment)
                 current_segment = {
                     "start": cycle["start"],
                     "end": cycle["end"],
                     "frequencies": [cycle["hz"]]
+
                 }
 
-    # Add the final segment AFTER the loop is done
+   
     risk_segments.append(current_segment)
 
     print("Frames the book worm has swallowed:", frames_read)
@@ -280,6 +273,15 @@ def read_video(video_path):
             round(max(segment["frequencies"]), 2),
             "Hz"
         )
+    return [
+    {
+        "start": round(segment["start"], 2),
+        "end": round(segment["end"], 2),
+        "min_hz": round(min(segment["frequencies"]), 2),
+        "max_hz": round(max(segment["frequencies"]), 2)
+    }
+    for segment in risk_segments
+]
 
 
 
@@ -289,11 +291,11 @@ if __name__ == "__main__":
 
     print("video squashed:")
     print(final_video)
-    read_video(final_video)
+    result = read_video(final_video)
     if original.exists():
         original.unlink()
     if final_video.exists():
         final_video.unlink()
     print("the video has done its job and must now perish")
-
+    print(result)
     
