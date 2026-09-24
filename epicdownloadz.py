@@ -255,9 +255,8 @@ def read_video(video_path):
                     "frequencies": [cycle["hz"]]
 
                 }
+        risk_segments.append(current_segment)
 
-   
-    risk_segments.append(current_segment)
 
     print("Frames the book worm has swallowed:", frames_read)
     print("\n Risky segments:")
@@ -292,10 +291,10 @@ if __name__ == "__main__":
     print("video squashed:")
     print(final_video)
     result = read_video(final_video)
-    if original.exists():
-        original.unlink()
-    if final_video.exists():
-        final_video.unlink()
+   # if original.exists():
+   #     original.unlink()
+   # if final_video.exists():
+   #     final_video.unlink()
     print("the video has done its job and must now perish")
     print(result)
     
