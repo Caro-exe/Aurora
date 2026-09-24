@@ -1,0 +1,61 @@
+import json
+
+import torch
+from torch import nn
+
+
+FEATURE_NAMES = (
+    "positive_magnitude", "negative_magnitude", "brightening_fraction",
+    "darkening_fraction", "dominant_change", "red_transition", "contrast",
+)
+WINDOW_FRAMES = 48
+
+
+class AuroraLSTM(nn.Module):
+    """Small trainable architecture. Newly constructed weights are random."""
+
+    def __init__(self):
+        super().__init__()
+        self.lstm = nn.LSTM(input_size=7, hidden_size=32, num_layers=1,
+                            batch_first=True)
+        self.classifier = nn.Linear(32, 1)
+
+    def forward(self, features):
+        """Return raw logits [batch], suitable for future BCEWithLogitsLoss.
+
+        A logit from this untrained model has no risk meaning.
+        """
+        parameter = next(self.parameters())
+        x = torch.as_tensor(features, dtype=parameter.dtype,
+                            device=parameter.device)
+        if x.ndim == 2:
+            x = x.unsqueeze(0)
+        if x.ndim != 3 or tuple(x.shape[1:]) != (WINDOW_FRAMES, 7):
+            raise ValueError("Expected [48, 7] or [batch, 48, 7] features.")
+        if x.shape[0] == 0 or not torch.isfinite(x).all().item():
+            raise ValueError("Features must be nonempty and finite.")
+        _, (hidden, _) = self.lstm(x)
+        return self.classifier(hidden[-1]).squeeze(-1)
+
+
+class AuroraLSTMStandIn:
+   
+    def __init__(self):
+        self.model = AuroraLSTM().eval()
+
+    @torch.inference_mode()
+    def analyze(self, features):
+        logits = self.model(features)
+        return {
+            "status": "untrained",
+            "risk_score": None,
+            "risk_label": None,
+            "windows_processed": int(logits.shape[0]),
+            "message": "LSTM connected; awaiting training and validation.",
+        }
+
+
+if __name__ == "__main__":
+    # Dummy input 
+    stand_in = AuroraLSTMStandIn()
+    print(json.dumps(stand_in.analyze(torch.zeros(48, 7)), indent=2))
